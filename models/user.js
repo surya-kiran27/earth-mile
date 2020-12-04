@@ -4,8 +4,11 @@ const UserSchema = new mongoose.Schema(
   {
     username: String,
     email: String,
+    role: [String],
     image: String,
     googleId: String,
+    earth_mile_id: String,
+    posts: [String],
   },
   { timestamps: true }
 );

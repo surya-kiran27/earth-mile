@@ -33,6 +33,9 @@ passport.use(
             username: profile.displayName,
             email: profile._json.email,
             image: profile._json.picture,
+            posts: [],
+            role: ["user"],
+            earth_mile_id: "",
           })
             .save()
             .then((newUser) => {
