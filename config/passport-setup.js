@@ -1,6 +1,11 @@
+const { authenticate } = require("passport");
 const passport = require("passport");
 const GoogleStrategy = require("passport-google-oauth20").Strategy;
+const LocalStrategy = require("passport-local").Strategy;
 const User = require("../models/user");
+const superUser = require("../models/super-user");
+const bcrypt = require("bcrypt");
+
 passport.serializeUser((user, done) => {
   done(null, user.id);
 });
@@ -10,6 +15,30 @@ passport.deserializeUser((id, done) => {
     done(null, user);
   });
 });
+// local strategy for super user
+passport.use(
+  new LocalStrategy(
+    { usernameField: "username" },
+    async (username, password, done) => {
+      try {
+        await superUser.findById({ username: username }).then((super_user) => {
+          //check super user exists
+          if (super_user) {
+            //compare the passwords
+            if (bcrypt.compare(password, super_user.password))
+              done(null, super_user);
+            else done(null, false, { message: "Password is incorrect" });
+          } else {
+            done(null, false, { message: "User Not Found" });
+          }
+        });
+      } catch (error) {
+        done(error);
+      }
+    }
+  )
+);
+//google strategy for user and admin
 passport.use(
   new GoogleStrategy(
     {
@@ -23,11 +52,9 @@ passport.use(
       User.findOne({ googleId: profile.id }).then((currentUser) => {
         if (currentUser) {
           // already have this user
-          console.log("user is: ", currentUser);
           done(null, currentUser);
         } else {
           // if not, create user in our db
-
           new User({
             googleId: profile.id,
             username: profile.displayName,
@@ -39,7 +66,6 @@ passport.use(
           })
             .save()
             .then((newUser) => {
-              console.log("new user created: ", newUser);
               done(null, newUser);
             });
         }

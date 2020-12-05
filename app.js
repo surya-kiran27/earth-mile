@@ -9,6 +9,7 @@ const cookieSession = require("cookie-session");
 const indexRouter = require("./routes/index");
 const usersRouter = require("./routes/users");
 const earthMileRouter = require("./routes/earth_mile");
+const super_User = require("./controllers/super_user");
 
 const passport = require("passport");
 //intialize passport-setup
@@ -40,6 +41,7 @@ app.use(express.static(path.join(__dirname, "public")));
 app.use("/", indexRouter);
 app.use("/users", usersRouter);
 app.use("/earth-mile", earthMileRouter);
+app.use("/super_User", super_User);
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {
   next(createError(404));

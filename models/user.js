@@ -9,6 +9,7 @@ const UserSchema = new mongoose.Schema(
     googleId: String,
     earth_mile_id: String,
     posts: [String],
+    status: String,
   },
   { timestamps: true }
 );

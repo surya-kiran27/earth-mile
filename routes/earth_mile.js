@@ -21,7 +21,7 @@ router.get("/posts", async (req, res) => {
         const post = await Post.findById(post_id);
         const username = (await User.findById(post.user_id)).username;
         let { title, description, body, category } = post;
-        console.log(username, title, description);
+
         posts.push({
           username: username,
           title: title,
@@ -36,7 +36,7 @@ router.get("/posts", async (req, res) => {
     }
   }
 });
-router.get("/get", checkAuth, async (req, res) => {
+router.get("/", checkAuth, async (req, res) => {
   const coordinates = req.query.coordinates.split(",").map(Number);
   if (coordinates.length !== 2) {
     res.json({
@@ -126,5 +126,4 @@ router.post("/create-post", async (req, res) => {
     res.json({ success: false, message: "Failed to create post, try again!" });
   }
 });
-router.put();
 module.exports = router;
