@@ -7,36 +7,43 @@ const superUser = require("../models/super-user");
 const bcrypt = require("bcrypt");
 
 passport.serializeUser((user, done) => {
-  done(null, user.id);
+  console.log("inside serialize", user);
+  done(null, user._id);
 });
 
 passport.deserializeUser((id, done) => {
-  User.findById(id).then((user) => {
-    done(null, user);
+  User.findOne({ _id: id }).then((user) => {
+    if (user == null) {
+      superUser.findOne({ _id: id }).then((super_user) => {
+        console.log("inside deserialize", super_user, id);
+        done(null, super_user);
+      });
+    } else done(null, user);
   });
 });
 // local strategy for super user
 passport.use(
-  new LocalStrategy(
-    { usernameField: "username" },
-    async (username, password, done) => {
-      try {
-        await superUser.findById({ username: username }).then((super_user) => {
-          //check super user exists
-          if (super_user) {
-            //compare the passwords
-            if (bcrypt.compare(password, super_user.password))
-              done(null, super_user);
-            else done(null, false, { message: "Password is incorrect" });
-          } else {
-            done(null, false, { message: "User Not Found" });
-          }
-        });
-      } catch (error) {
-        done(error);
+  new LocalStrategy((username, password, done) => {
+    superUser.findOne({ username: username }, (err, super_user) => {
+      if (err) {
+        done(err);
       }
-    }
-  )
+      if (super_user) {
+        //compare the passwords
+        bcrypt
+          .compare(password, super_user.password)
+          .then((result) => {
+            if (result) done(null, super_user);
+            else done(null, false, { message: "Password is incorrect" });
+          })
+          .catch((err) => {
+            done(err);
+          });
+      } else {
+        done(null, false, { message: "User Not Found" });
+      }
+    });
+  })
 );
 //google strategy for user and admin
 passport.use(

@@ -1,6 +1,7 @@
 require("dotenv").config();
 const createError = require("http-errors");
 const express = require("express");
+const cors = require("cors");
 const path = require("path");
 const cookieParser = require("cookie-parser");
 const logger = require("morgan");
@@ -16,6 +17,8 @@ const passport = require("passport");
 const passportSetup = require("./config/passport-setup");
 
 const app = express();
+app.use(cors({ origin: "http://localhost:3000", credentials: true }));
+
 //initialize database
 const db = require("./models/db");
 // view engine setup
@@ -26,6 +29,7 @@ app.use(
   cookieSession({
     maxAge: 24 * 60 * 60 * 1000,
     keys: [process.env.cookieKey],
+    httpOnly: false,
   })
 );
 
@@ -36,12 +40,15 @@ app.use(logger("dev"));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
-app.use(express.static(path.join(__dirname, "public")));
+app.use(express.static(path.join(__dirname, "build")));
 //routes
-app.use("/", indexRouter);
+
 app.use("/users", usersRouter);
-app.use("/earth-mile", earthMileRouter);
-app.use("/super_User", super_User);
+app.use("/earth-miles", earthMileRouter);
+app.use("/super-User", super_User);
+app.get("/*", function (req, res) {
+  res.sendFile(path.join(__dirname, "build", "index.html"));
+});
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {
   next(createError(404));

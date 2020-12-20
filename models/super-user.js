@@ -4,6 +4,7 @@ const SuperUserSchema = new mongoose.Schema(
   {
     username: String,
     password: String,
+    roles: ["Super"],
   },
   { timestamps: true }
 );

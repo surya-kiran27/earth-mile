@@ -46,21 +46,25 @@ router.get("/", checkAuth, async (req, res) => {
     });
     return;
   }
+  console.log(req.query.coordinates);
   const response = await EarthMile.aggregate([
     {
       $geoNear: {
         near: { type: "Point", coordinates: coordinates },
         maxDistance: 1609,
+
         spherical: true,
         distanceField: "distance",
       },
     },
   ]);
+  console.log(response);
   const earth_miles = response.map((earth_mile) => {
     return {
       location: earth_mile.location.coordinates,
-      no_users: earth_mile.no_users,
-      distance: earth_mile.distance,
+      users: earth_mile.users,
+      posts: earth_mile.posts,
+      createdAt: earth_mile.createdAt,
     };
   });
   res.json({ success: true, earth_miles });
