@@ -70,6 +70,17 @@ router.get("/", checkAuth, async (req, res) => {
   res.json({ success: true, earth_miles });
 });
 router.post("/create", checkAuth, async (req, res) => {
+  const { name, address } = req.body;
+  if (
+    name === undefined ||
+    address === undefined ||
+    name === "" ||
+    address == "" ||
+    req.body.coordinates === ""
+  ) {
+    res.json({ success: false, message: "invalid details" });
+    return;
+  }
   const coordinates = req.body.coordinates.split(",").map(Number);
   if (coordinates.length !== 2) {
     res.json({
@@ -82,14 +93,18 @@ router.post("/create", checkAuth, async (req, res) => {
   try {
     const earth_mile = await new EarthMile({
       users: [req.user._id],
-      no_posts: 0,
-      no_users: 1,
+      name,
+      address,
       location: {
         type: "Point",
         coordinates: coordinates,
       },
       posts: [],
     }).save();
+    await User.findOneAndUpdate(
+      { _id: req.user._id },
+      { $set: { earth_mile_id: earth_mile._id } }
+    );
     res.json({ success: true, earth_mile: earth_mile });
   } catch (error) {
     console.log(error);

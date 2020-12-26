@@ -3,8 +3,7 @@ const mongoose = require("mongoose");
 const EarthMileSchema = new mongoose.Schema(
   {
     users: [String],
-    no_posts: Number,
-    no_users: Number,
+    name: String,
     location: {
       type: {
         type: String, // Don't do `{ location: { type: String } }`
@@ -18,6 +17,7 @@ const EarthMileSchema = new mongoose.Schema(
       },
     },
     posts: [String],
+    address: String,
   },
   { timestamps: true }
 );
