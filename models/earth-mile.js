@@ -16,7 +16,9 @@ const EarthMileSchema = new mongoose.Schema(
         index: "2dsphere",
       },
     },
-    posts: [String],
+    humans: [String],
+    animals: [String],
+    environment: [String],
     address: String,
   },
   { timestamps: true }

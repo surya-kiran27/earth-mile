@@ -10,30 +10,51 @@ const checkAuth = (req, res, next) => {
     res.redirect("/login");
   }
 };
-router.get("/posts", async (req, res) => {
-  const earth_mile_id = req.query.earth_mile_id;
-  if (earth_mile_id === "") res.json({ success: true, posts: [] });
+router.get("/Posts", async (req, res) => {
+  const earth_mile_id = req.query.id;
+  const category = req.query.category;
+  if (typeof earth_mile_id === "undefined" || earth_mile_id === "")
+    res.json({ success: true, posts: [] });
   else {
     try {
-      let doc = (await EarthMile.findById(earth_mile_id)).posts;
-      let posts = [];
-      await doc.map(async (post_id) => {
+      console.log(category, earth_mile_id);
+      let doc = await EarthMile.findById(earth_mile_id);
+
+      const result = doc[category].map(async (post_id) => {
         const post = await Post.findById(post_id);
         const username = (await User.findById(post.user_id)).username;
-        let { title, description, body, category } = post;
+        let { title, description, body, category, createdAt } = post;
 
-        posts.push({
-          username: username,
+        return {
+          username,
           title: title,
           description: description,
           body: body,
           category: category,
-        });
+          createdAt,
+        };
+      });
+      Promise.all(result).then((posts) => {
+        console.log(posts, "posts");
         res.json({ success: true, posts: posts });
       });
     } catch (error) {
       console.log(error);
     }
+  }
+});
+router.get("/earth-mile", checkAuth, async (req, res) => {
+  const id = req.query.id;
+  if (typeof id === "undefined" || id == null || id === "")
+    res.json({
+      success: false,
+      message: "missing parameters or invalid value",
+    });
+  try {
+    const doc = await EarthMile.findById(id);
+    res.json({ success: true, earth_mile: doc });
+  } catch (error) {
+    res.json({ success: false, message: "error occured!" });
   }
 });
 router.get("/", checkAuth, async (req, res) => {
@@ -51,7 +72,6 @@ router.get("/", checkAuth, async (req, res) => {
     {
       $geoNear: {
         near: { type: "Point", coordinates: coordinates },
-        maxDistance: 1609,
 
         spherical: true,
         distanceField: "distance",
@@ -60,10 +80,15 @@ router.get("/", checkAuth, async (req, res) => {
   ]);
   console.log(response);
   const earth_miles = response.map((earth_mile) => {
+    const No_Posts =
+      earth_mile.humans.length +
+      earth_mile.animals.length +
+      earth_mile.environment.length;
     return {
+      _id: earth_mile._id,
       location: earth_mile.location.coordinates,
       users: earth_mile.users,
-      posts: earth_mile.posts,
+      No_Posts,
       createdAt: earth_mile.createdAt,
     };
   });
@@ -99,7 +124,9 @@ router.post("/create", checkAuth, async (req, res) => {
         type: "Point",
         coordinates: coordinates,
       },
-      posts: [],
+      humans: [],
+      animals: [],
+      environment: [],
     }).save();
     await User.findOneAndUpdate(
       { _id: req.user._id },
@@ -116,10 +143,10 @@ router.post("/create", checkAuth, async (req, res) => {
   }
 });
 router.post("/create-post", async (req, res) => {
-  const earth_mile_id = req.user.earth_mile_id;
+  const earth_mile_id = req.body.earth_mile_id;
 
   if (earth_mile_id === "") {
-    res.json({ success: false, message: "Please join a earth mile first" });
+    res.json({ success: false, message: "Invalid parameters" });
     return;
   }
 
@@ -135,10 +162,11 @@ router.post("/create-post", async (req, res) => {
       earth_mile_id: earth_mile_id,
     }).save();
     await EarthMile.findByIdAndUpdate(earth_mile_id, {
-      $inc: { no_posts: 1 },
+      $push: { [category]: post.id },
+    });
+    humans = await User.findByIdAndUpdate(req.user._id, {
       $push: { posts: post.id },
     });
-    await User.findByIdAndUpdate(req.user._id, { $push: { posts: post.id } });
     res.json({ success: true });
   } catch (error) {
     console.log(error);
