@@ -22,11 +22,12 @@ router.get("/Posts", async (req, res) => {
 
       const result = doc[category].map(async (post_id) => {
         const post = await Post.findById(post_id);
-        const username = (await User.findById(post.user_id)).username;
+        const { username, image } = await User.findById(post.user_id);
         let { title, description, body, category, createdAt } = post;
 
         return {
           username,
+          image,
           title: title,
           description: description,
           body: body,
@@ -51,9 +52,14 @@ router.get("/earth-mile", checkAuth, async (req, res) => {
       message: "missing parameters or invalid value",
     });
   try {
-    const doc = await EarthMile.findById(id);
-    res.json({ success: true, earth_mile: doc });
+    let doc = await EarthMile.findById(id);
+    let result = doc;
+    result["No_Posts"] =
+      doc.humans.length + doc.animals.length + doc.environment.length;
+    console.log(result);
+    res.json({ success: true, earth_mile: result });
   } catch (error) {
+    console.log(error);
     res.json({ success: false, message: "error occured!" });
   }
 });
